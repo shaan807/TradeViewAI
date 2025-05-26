@@ -15,6 +15,7 @@ import {
   Area, 
   Scatter,
   ZAxis,
+  Payload,
 } from 'recharts';
 import CustomCandleStick from './custom-candlestick';
 import { format, parse } from 'date-fns';
@@ -171,7 +172,7 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({ data }) => {
       yPos: (d.High + d.Low) / 2
     }));
 
-  const customLegendPayload = [
+  const customLegendPayload: Payload[] = [
     { value: 'Support', type: 'circle', color: '#22c55e', id: 'Support' },
     { value: 'Resistance', type: 'circle', color: '#ef4444', id: 'Resistance' },
     { value: 'LONG', type: 'circle', color: '#22c55e', id: 'LONG' },
