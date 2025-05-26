@@ -58,31 +58,42 @@ const CustomTooltipContent = ({ active, payload, label }: any) => {
 };
 
 const ArrowShape = (props: any) => {
-  const { cx, cy, payload, fill } = props;
+  const { cx, cy, payload } = props;
   if (!payload || typeof cx !== 'number' || typeof cy !== 'number') return null;
   
-  const size = 10; // Size of the arrow
+  const size = 25; // Increased size for better visibility
   let path;
   let color;
 
   if (payload.direction === 'LONG') {
-    // Upward pointing arrow below the candle
-    path = `M ${cx} ${cy} L ${cx - size / 2} ${cy + size} L ${cx + size / 2} ${cy + size} Z`;
-    color = '#22c55e'; // Green color
+    // Upward pointing arrow below candle
+    path = `M ${cx} ${cy - size} L ${cx - size/2} ${cy} L ${cx + size/2} ${cy} Z`;
+    color = '#22c55e';
   } else if (payload.direction === 'SHORT') {
-    // Downward pointing arrow above the candle
-    path = `M ${cx} ${cy} L ${cx - size / 2} ${cy - size} L ${cx + size / 2} ${cy - size} Z`;
-    color = '#ef4444'; // Red color
+    // Downward pointing arrow above candle
+    path = `M ${cx} ${cy + size} L ${cx - size/2} ${cy} L ${cx + size/2} ${cy} Z`;
+    color = '#ef4444';
   } else {
     return null;
   }
-  return <path d={path} fill={color} />;
+  return (
+    <path d={path} fill={color} stroke={color} strokeWidth={3} />
+  );
 };
 
 const CircleShape = (props: any) => {
   const { cx, cy } = props;
   if (typeof cx !== 'number' || typeof cy !== 'number') return null;
-  return <circle cx={cx} cy={cy} r={5} fill="#eab308" />; // Yellow color for None direction
+  return (
+    <circle 
+      cx={cx} 
+      cy={cy} 
+      r={12} 
+      fill="#eab308" 
+      stroke="#eab308"
+      strokeWidth={3}
+    />
+  );
 };
 
 const CandlestickChart: React.FC<CandlestickChartProps> = ({ data }) => {
@@ -119,31 +130,54 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({ data }) => {
   const yDomainMax = maxY * (1 + yDomainMargin);
   
   const priceRange = maxY - minY;
-  const arrowOffset = priceRange * 0.03;
+  const arrowOffset = priceRange * 0.05; // Increased offset for better separation
 
   const chartData = filteredData.map(d => ({
     ...d,
     candleWick: {
-      open: d.Open,
+      x: d.Timestamp,
       high: d.High,
       low: d.Low,
+      open: d.Open,
       close: d.Close
     },
-    supportBand: (d.supportMin !== null && d.supportMax !== null) ? [d.supportMin, d.supportMax] : null,
-    resistanceBand: (d.resistanceMin !== null && d.resistanceMax !== null) ? [d.resistanceMin, d.resistanceMax] : null,
+    supportMin: d.supportMin,
+    supportMax: d.supportMax,
+    resistanceMin: d.resistanceMin,
+    resistanceMax: d.resistanceMax,
   }));
 
   const longMarkers = filteredData
     .filter(d => d.direction === 'LONG')
-    .map(d => ({ ...d, Timestamp: d.Timestamp, yPos: d.Low - arrowOffset }));
+    .map(d => ({ 
+      ...d, 
+      Timestamp: d.Timestamp, 
+      yPos: d.Low - arrowOffset
+    }));
   
   const shortMarkers = filteredData
     .filter(d => d.direction === 'SHORT')
-    .map(d => ({ ...d, Timestamp: d.Timestamp, yPos: d.High + arrowOffset }));
+    .map(d => ({ 
+      ...d, 
+      Timestamp: d.Timestamp, 
+      yPos: d.High + arrowOffset
+    }));
   
   const noneMarkers = filteredData
     .filter(d => d.direction === 'None')
-    .map(d => ({ ...d, Timestamp: d.Timestamp, yPos: (d.High + d.Low) / 2 }));
+    .map(d => ({ 
+      ...d, 
+      Timestamp: d.Timestamp, 
+      yPos: (d.High + d.Low) / 2
+    }));
+
+  const customLegendPayload = [
+    { value: 'Support', type: 'circle', color: '#22c55e', id: 'Support' },
+    { value: 'Resistance', type: 'circle', color: '#ef4444', id: 'Resistance' },
+    { value: 'LONG', type: 'circle', color: '#22c55e', id: 'LONG' },
+    { value: 'SHORT', type: 'circle', color: '#ef4444', id: 'SHORT' },
+    { value: 'None', type: 'circle', color: '#eab308', id: 'None' },
+  ];
 
   return (
     <div className="space-y-4">
@@ -212,8 +246,6 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({ data }) => {
               scale="time"
               type="number"
               domain={['dataMin', 'dataMax']}
-              allowDataOverflow={true}
-              allowDecimals={false}
             />
             <YAxis
               orientation="right"
@@ -221,75 +253,97 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({ data }) => {
               tickFormatter={(value) => value.toFixed(2)}
               stroke="#666"
               width={80}
-              allowDataOverflow={true}
-              allowDecimals={false}
             />
-            <Tooltip 
-              content={<CustomTooltipContent />} 
-              cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
-              isAnimationActive={false}
-            />
-            <Legend
-              wrapperStyle={{ paddingTop: '20px' }}
-              verticalAlign="top"
-              align="center"
-            />
-
+            
+            {/* Support Band (green, as a band between min and max) */}
             <Area
-              type="monotoneX"
-              dataKey="supportBand"
-              stroke="#22c55e"
+              type="monotone"
+              dataKey="supportMax"
+              stroke="none"
               fill="#22c55e33"
-              strokeWidth={1.5}
+              fillOpacity={0.3}
               name="Support"
               connectNulls={true}
               isAnimationActive={false}
             />
-            
             <Area
-              type="monotoneX"
-              dataKey="resistanceBand"
-              stroke="#ef4444"
+              type="monotone"
+              dataKey="supportMin"
+              stroke="#22c55e"
+              fill="none"
+              connectNulls={true}
+              isAnimationActive={false}
+              hide={true}
+            />
+            
+            {/* Resistance Band (red, as a band between min and max) */}
+            <Area
+              type="monotone"
+              dataKey="resistanceMax"
+              stroke="none"
               fill="#ef444433"
-              strokeWidth={1.5}
+              fillOpacity={0.3}
               name="Resistance"
               connectNulls={true}
               isAnimationActive={false}
             />
-            
-            <Bar 
-              dataKey="candleWick" 
-              shape={<CustomCandleStick />} 
-              fill="transparent" 
-              barSize={8}
+            <Area
+              type="monotone"
+              dataKey="resistanceMin"
+              stroke="#ef4444"
+              fill="none"
+              connectNulls={true}
               isAnimationActive={false}
+              hide={true}
             />
             
+            {/* Candlesticks */}
+            <Bar 
+              dataKey="candleWick" 
+              shape={<CustomCandleStick />}
+              isAnimationActive={false}
+              barSize={8}
+              hide={true}
+            />
+            
+            {/* Direction Markers */}
             <Scatter 
               name="LONG" 
               data={longMarkers} 
-              dataKey="yPos" 
-              fill="#22c55e"
+              dataKey="yPos"
               shape={<ArrowShape />}
               isAnimationActive={false}
+              fill="#22c55e"
+              zAxisId={1}
             />
             <Scatter 
               name="SHORT" 
               data={shortMarkers} 
-              dataKey="yPos" 
-              fill="#ef4444"
+              dataKey="yPos"
               shape={<ArrowShape />}
               isAnimationActive={false}
+              fill="#ef4444"
+              zAxisId={1}
             />
             <Scatter 
               name="None" 
               data={noneMarkers} 
-              dataKey="yPos" 
-              fill="#eab308"
+              dataKey="yPos"
               shape={<CircleShape />}
               isAnimationActive={false}
+              fill="#eab308"
+              zAxisId={1}
             />
-            <ZAxis range={[100, 100]} />
+            
+            <Tooltip content={<CustomTooltipContent />} />
+            <Legend 
+              verticalAlign="top" 
+              align="center"
+              iconSize={10}
+              iconType="circle"
+              payload={customLegendPayload}
+            />
+            <ZAxis range={[300, 300]} zAxisId={1} /> {/* Increased range for better marker visibility */}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
