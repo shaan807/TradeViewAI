@@ -140,11 +140,10 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({ data }) => {
             cursor={{ fill: 'hsl(var(--accent) / 0.1)' }}
             isAnimationActive={false}
           />
-          <Legend 
-            wrapperStyle={{ paddingTop: '30px' }} 
-            verticalAlign="top" 
+          <Legend
+            wrapperStyle={{ paddingTop: '20px' }}
+            verticalAlign="top"
             align="center"
-            isAnimationActive={false}
           />
 
           <Area
