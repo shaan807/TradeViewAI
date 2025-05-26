@@ -31,6 +31,6 @@ npm run dev
 
 
 .  **Open the application:**
-    After the development server starts, open your web browser and go to the address provided in the terminal output (usually http://localhost:3000).
+    After the development server starts, open your web browser and go to the address provided in the terminal output (http://localhost:9002).
 
 These are the standard steps for running a Next.js application. If there are any specific instructions or scripts defined in the package.json file, you might need to follow those as well.
