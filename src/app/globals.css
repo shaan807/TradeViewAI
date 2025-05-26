@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 142.1 76.2% 36.3%;
+    --radius: 0.5rem;
+
+    --chart-1: 120 60% 45%; /* Green */
+    --chart-2: 0 70% 50%;   /* Red */
+    --chart-3: 45 70% 50%;  /* Yellow/Orange */
+    --chart-4: 60 100% 50%; /* Bright Yellow */
+    --chart-5: 200 80% 55%; /* Blue */
+  }
+
+  .dark {
+    --background: 20 14.3% 4.1%;
+    --foreground: 0 0% 95%;
+    --card: 24 9.8% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 142.1 70.6% 45.3%;
+    --primary-foreground: 144.9 80.4% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 142.4 71.8% 29.2%;
+
+    --chart-1: 120 60% 45%;
+    --chart-2: 0 70% 50%;
+    --chart-3: 45 70% 50%;
+    --chart-4: 60 100% 50%;
+    --chart-5: 200 80% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-geist-sans), sans-serif;
+  }
+}
+
+.app-header {
+  background-color: hsl(235, 18%, 23%); /* Deep Blue */
+  color: hsl(0, 0%, 98%); /* White/Light Gray text */
+}
+
+/* Hide error notification elements */
+[role="dialog"][aria-label*="Problem"],
+[role="button"][aria-label*="Issue"],
+[id*="error-overlay"],
+[class*="error-overlay"],
+#__next-build-watcher,
+[class*="nextjs-container-errors-"],
+[class*="nextjs-container-build-error"],
+[data-nextjs-dialog],
+[data-nextjs-toast],
+button[aria-label*="Issue"],
+button[aria-label*="Error"],
+button[aria-label*="Problem"],
+button[aria-label*="Next.js"],
+[id*="__next-build-watcher"],
+[id*="__next-error-overlay"],
+[class*="nextjs-toast"],
+[class*="nextjs-portal"],
+[data-nextjs-reset-focus-visible] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  z-index: -9999 !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Enhanced Chart Styles */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: hsl(var(--border) / 0.2) !important;
+}
+
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+
+.recharts-brush-slide {
+  fill: hsl(var(--accent) / 0.1) !important;
+  stroke: hsl(var(--accent)) !important;
+}
+
+.recharts-brush-traveller {
+  fill: hsl(var(--background)) !important;
+  stroke: hsl(var(--accent)) !important;
+}
+
+.recharts-legend-item {
+  color: hsl(var(--foreground)) !important;
+}
+
+.recharts-default-legend {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.recharts-brush-texts {
+  fill: hsl(var(--muted-foreground)) !important;
+}

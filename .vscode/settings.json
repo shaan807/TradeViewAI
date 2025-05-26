@@ -1,0 +1,33 @@
+{
+    "IDX.aI.enableInlineCompletion": true,
+    "IDX.aI.enableCodebaseIndexing": true,
+    "liveServer.settings.port": 5501,
+    "problems.decorations.enabled": false,
+    "problems.autoReveal": false,
+    "problems.enabled": false,
+    "typescript.validate.enable": false,
+    "javascript.validate.enable": false,
+    "eslint.enable": false,
+    "eslint.validate": [],
+    "typescript.surveys.enabled": false,
+    "typescript.reportStyleChecksAsWarnings": false,
+    "js/ts.implicitProjectConfig.checkJs": false,
+    "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+    "editor.quickSuggestions": {
+        "strings": false,
+        "comments": false,
+        "other": false
+    },
+    "editor.suggestOnTriggerCharacters": false,
+    "editor.diagnostics.enabled": false,
+    "workbench.statusBar.visible": false,
+    "scm.diffDecorations": "none",
+    "workbench.editor.showTabs": "single",
+    "workbench.activityBar.location": "hidden",
+    "workbench.statusBar.enabledProviders": [],
+    "workbench.editor.enablePreview": false,
+    "workbench.editor.showIcons": false,
+    "workbench.editor.decorations.badges": false,
+    "workbench.editor.decorations.colors": false,
+    "scm.countBadge": "off"
+}
