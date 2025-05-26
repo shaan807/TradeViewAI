@@ -14,24 +14,27 @@ interface CustomCandleStickProps {
 }
 
 const CustomCandleStick: React.FC<CustomCandleStickProps> = (props) => {
-  const { x, y, width, height, open, close } = props;
+  const { x, y, width, height, open, close, high, low } = props;
 
   // Early return with empty SVG if any required prop is invalid
-  if (!x || !y || !width || !height || typeof open !== 'number' || typeof close !== 'number') {
+  if (!x || !y || !width || !height || typeof open !== 'number' || typeof close !== 'number' || typeof high !== 'number' || typeof low !== 'number') {
+    console.log('Invalid candlestick props:', { x, y, width, height, open, close, high, low }); // Debug log
     return <g />;
   }
 
   try {
     const isBullish = close > open;
-    const color = isBullish ? 'var(--chart-1)' : 'var(--chart-2)'; // Green for bullish, Red for bearish
+    const color = isBullish ? '#22c55e' : '#ef4444'; // Green for bullish, Red for bearish
     
-    // Ensure all calculations are valid numbers
-    const bodyY = y + ((props.high ?? 0) - Math.max(open, close)) * (height / ((props.high ?? 0) - (props.low ?? 0) || 1));
-    const bodyHeight = Math.abs(open - close) * (height / ((props.high ?? 0) - (props.low ?? 0) || 1));
+    // Calculate the body position and size
+    const priceRange = high - low;
+    const bodyY = y + ((high - Math.max(open, close)) * height / priceRange);
+    const bodyHeight = Math.abs(open - close) * height / priceRange;
     const wickX = x + width / 2;
 
     // Return empty SVG if any calculation resulted in NaN or Infinity
-    if (!isFinite(bodyY) || !isFinite(bodyHeight) || !isFinite(wickX)) {
+    if (!isFinite(bodyY) || !isFinite(bodyHeight) || !isFinite(wickX) || priceRange === 0) {
+      console.log('Invalid candlestick calculations:', { bodyY, bodyHeight, wickX, priceRange }); // Debug log
       return <g />;
     }
 
@@ -44,7 +47,7 @@ const CustomCandleStick: React.FC<CustomCandleStickProps> = (props) => {
       </g>
     );
   } catch (error) {
-    // Return empty SVG on any error
+    console.error('Error rendering candlestick:', error); // Debug log
     return <g />;
   }
 };

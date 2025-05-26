@@ -1,17 +1,18 @@
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import PriceVolumeChart from "@/components/tradevision/price-volume-chart"; // Changed import
+import CandlestickChart from "@/components/tradevision/candlestick-chart";
 import Chatbot from "@/components/tradevision/chatbot";
 import TrendPredictor from "@/components/tradevision/trend-predictor";
 import { loadStockData, rawCsvDataStore } from "@/lib/data-loader";
 import type { StockDataPoint } from "@/lib/data-loader";
-import { BarChart3, MessageCircle, Zap, Brain, LineChart } from "lucide-react"; // Added LineChart
+import { BarChart3, MessageCircle, Zap, Brain, LineChart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 
 export default async function TradeVisionPage() {
   const stockData: StockDataPoint[] = await loadStockData();
+  console.log('Loaded stock data length:', stockData.length);
   const stockDataCsv: string = rawCsvDataStore.getData();
+  console.log('Has CSV data:', !!stockDataCsv);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -43,8 +44,8 @@ export default async function TradeVisionPage() {
               </CardHeader>
               <CardContent className="p-2 sm:p-4">
                 {stockData.length > 0 ? (
-                  <div className="h-[550px] w-full"> {/* Adjusted height container for the chart */}
-                    <PriceVolumeChart data={stockData} />
+                  <div className="h-[700px] w-full min-h-[500px]">
+                    <CandlestickChart data={stockData} />
                   </div>
                 ) : (
                   <div className="text-center py-10 text-muted-foreground h-[550px] flex items-center justify-center">

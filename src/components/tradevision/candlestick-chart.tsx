@@ -2,7 +2,7 @@
 
 import type { StockDataPoint } from '@/lib/data-loader';
 import { suppressChartWarnings } from '@/lib/chart-validation';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ComposedChart,
   Bar,
@@ -17,7 +17,14 @@ import {
   ZAxis,
 } from 'recharts';
 import CustomCandleStick from './custom-candlestick';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
 
 interface CandlestickChartProps {
   data: StockDataPoint[];
@@ -54,27 +61,48 @@ const ArrowShape = (props: any) => {
   const { cx, cy, payload, fill } = props;
   if (!payload || typeof cx !== 'number' || typeof cy !== 'number') return null;
   
-  const size = 8; 
+  const size = 10; // Size of the arrow
   let path;
+  let color;
 
   if (payload.direction === 'LONG') {
+    // Upward pointing arrow below the candle
     path = `M ${cx} ${cy} L ${cx - size / 2} ${cy + size} L ${cx + size / 2} ${cy + size} Z`;
+    color = '#22c55e'; // Green color
   } else if (payload.direction === 'SHORT') {
+    // Downward pointing arrow above the candle
     path = `M ${cx} ${cy} L ${cx - size / 2} ${cy - size} L ${cx + size / 2} ${cy - size} Z`;
+    color = '#ef4444'; // Red color
   } else {
-    return null; 
+    return null;
   }
-  return <path d={path} fill={fill} />;
+  return <path d={path} fill={color} />;
 };
 
 const CircleShape = (props: any) => {
-  const { cx, cy, fill } = props;
+  const { cx, cy } = props;
   if (typeof cx !== 'number' || typeof cy !== 'number') return null;
-  return <circle cx={cx} cy={cy} r={4} fill={fill} />;
+  return <circle cx={cx} cy={cy} r={5} fill="#eab308" />; // Yellow color for None direction
 };
 
-
 const CandlestickChart: React.FC<CandlestickChartProps> = ({ data }) => {
+  const [enableDateFilter, setEnableDateFilter] = useState(false);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [filteredData, setFilteredData] = useState(data);
+
+  useEffect(() => {
+    if (enableDateFilter && startDate && endDate) {
+      const filtered = data.filter(item => {
+        const itemDate = new Date(item.Timestamp);
+        return itemDate >= startDate && itemDate <= endDate;
+      });
+      setFilteredData(filtered);
+    } else {
+      setFilteredData(data);
+    }
+  }, [data, enableDateFilter, startDate, endDate]);
+
   useEffect(() => {
     suppressChartWarnings();
   }, []);
@@ -84,125 +112,187 @@ const CandlestickChart: React.FC<CandlestickChartProps> = ({ data }) => {
   }
 
   const yDomainMargin = 0.15; 
-  const allPrices = data.flatMap(d => [d.Low, d.High, d.supportMin, d.supportMax, d.resistanceMin, d.resistanceMax].filter(p => typeof p === 'number'));
+  const allPrices = filteredData.flatMap(d => [d.Low, d.High, d.supportMin, d.supportMax, d.resistanceMin, d.resistanceMax].filter(p => typeof p === 'number'));
   const minY = Math.min(...allPrices, Infinity);
   const maxY = Math.max(...allPrices, -Infinity);
   const yDomainMin = minY * (1 - yDomainMargin);
   const yDomainMax = maxY * (1 + yDomainMargin);
   
   const priceRange = maxY - minY;
-  const arrowOffset = priceRange * 0.03; 
+  const arrowOffset = priceRange * 0.03;
 
-  const chartData = data.map(d => ({
+  const chartData = filteredData.map(d => ({
     ...d,
-    supportBand: (d.supportMin !== null && d.supportMax !== null && d.supportMin !== d.supportMax) ? [d.supportMin, d.supportMax] : null,
-    resistanceBand: (d.resistanceMin !== null && d.resistanceMax !== null && d.resistanceMin !== d.resistanceMax) ? [d.resistanceMin, d.resistanceMax] : null,
+    candleWick: {
+      open: d.Open,
+      high: d.High,
+      low: d.Low,
+      close: d.Close
+    },
+    supportBand: (d.supportMin !== null && d.supportMax !== null) ? [d.supportMin, d.supportMax] : null,
+    resistanceBand: (d.resistanceMin !== null && d.resistanceMax !== null) ? [d.resistanceMin, d.resistanceMax] : null,
   }));
 
-  const longMarkers = data
+  const longMarkers = filteredData
     .filter(d => d.direction === 'LONG')
     .map(d => ({ ...d, Timestamp: d.Timestamp, yPos: d.Low - arrowOffset }));
   
-  const shortMarkers = data
+  const shortMarkers = filteredData
     .filter(d => d.direction === 'SHORT')
     .map(d => ({ ...d, Timestamp: d.Timestamp, yPos: d.High + arrowOffset }));
   
-  const noneMarkers = data
+  const noneMarkers = filteredData
     .filter(d => d.direction === 'None')
     .map(d => ({ ...d, Timestamp: d.Timestamp, yPos: (d.High + d.Low) / 2 }));
 
-
   return (
-    <div className="h-[700px] w-full p-4 bg-card rounded-lg shadow-md"> 
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" />
-          <XAxis
-            dataKey="Timestamp"
-            tickFormatter={(timestamp) => format(new Date(timestamp), 'MMM dd')}
-            minTickGap={30}
-            stroke="hsl(var(--muted-foreground))"
-            scale="band"
-            allowDataOverflow={true}
-            allowDecimals={false}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between p-4 bg-card rounded-lg shadow-sm">
+        <div className="flex items-center space-x-2">
+          <Switch
+            checked={enableDateFilter}
+            onCheckedChange={setEnableDateFilter}
+            id="date-filter"
           />
-          <YAxis
-            orientation="right"
-            domain={[yDomainMin, yDomainMax]}
-            tickFormatter={(value) => value.toFixed(2)}
-            stroke="hsl(var(--muted-foreground))"
-            width={80}
-            allowDataOverflow={true}
-            allowDecimals={false}
-          />
-          <Tooltip 
-            content={<CustomTooltipContent />} 
-            cursor={{ fill: 'hsl(var(--accent) / 0.1)' }}
-            isAnimationActive={false}
-          />
-          <Legend
-            wrapperStyle={{ paddingTop: '20px' }}
-            verticalAlign="top"
-            align="center"
-          />
+          <Label htmlFor="date-filter">Filter by Date Range</Label>
+        </div>
+        
+        {enableDateFilter && (
+          <div className="flex items-center space-x-4">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {startDate ? format(startDate, "PPP") : "Start date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  onSelect={setStartDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
 
-          <Area
-            type="monotoneX"
-            dataKey="supportBand"
-            stroke="hsl(var(--chart-1) / 0.6)"
-            fill="hsl(var(--chart-1) / 0.2)"
-            strokeWidth={1.5}
-            name="Support"
-            connectNulls={true}
-            isAnimationActive={false}
-          />
-          
-          <Area
-            type="monotoneX"
-            dataKey="resistanceBand"
-            stroke="hsl(var(--chart-2) / 0.6)"
-            fill="hsl(var(--chart-2) / 0.2)"
-            strokeWidth={1.5}
-            name="Resistance"
-            connectNulls={true}
-            isAnimationActive={false}
-          />
-          
-          <Bar 
-            dataKey="candleWick" 
-            shape={<CustomCandleStick />} 
-            fill="transparent" 
-            barSize={12}
-            isAnimationActive={false}
-          />
-          
-          <Scatter 
-            name="LONG" 
-            data={longMarkers} 
-            dataKey="yPos" 
-            fill="hsl(var(--chart-1))" 
-            shape={<ArrowShape />}
-            isAnimationActive={false}
-          />
-          <Scatter 
-            name="SHORT" 
-            data={shortMarkers} 
-            dataKey="yPos" 
-            fill="hsl(var(--chart-2))" 
-            shape={<ArrowShape />}
-            isAnimationActive={false}
-          />
-          <Scatter 
-            name="None" 
-            data={noneMarkers} 
-            dataKey="yPos" 
-            fill="hsl(var(--chart-4))" 
-            shape={<CircleShape />}
-            isAnimationActive={false}
-          />
-          <ZAxis range={[100, 100]} />
-        </ComposedChart>
-      </ResponsiveContainer>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className={cn("justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {endDate ? format(endDate, "PPP") : "End date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  onSelect={setEndDate}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        )}
+      </div>
+
+      <div className="h-[700px] w-full p-4 bg-background rounded-lg shadow-md"> 
+        <ResponsiveContainer width="100%" height="100%" minHeight={500}>
+          <ComposedChart 
+            data={chartData} 
+            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            className="bg-background"
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+            <XAxis
+              dataKey="Timestamp"
+              tickFormatter={(timestamp) => format(new Date(timestamp), 'MMM dd')}
+              minTickGap={30}
+              stroke="#666"
+              scale="time"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              allowDataOverflow={true}
+              allowDecimals={false}
+            />
+            <YAxis
+              orientation="right"
+              domain={[yDomainMin, yDomainMax]}
+              tickFormatter={(value) => value.toFixed(2)}
+              stroke="#666"
+              width={80}
+              allowDataOverflow={true}
+              allowDecimals={false}
+            />
+            <Tooltip 
+              content={<CustomTooltipContent />} 
+              cursor={{ fill: 'rgba(255, 255, 255, 0.1)' }}
+              isAnimationActive={false}
+            />
+            <Legend
+              wrapperStyle={{ paddingTop: '20px' }}
+              verticalAlign="top"
+              align="center"
+            />
+
+            <Area
+              type="monotoneX"
+              dataKey="supportBand"
+              stroke="#22c55e"
+              fill="#22c55e33"
+              strokeWidth={1.5}
+              name="Support"
+              connectNulls={true}
+              isAnimationActive={false}
+            />
+            
+            <Area
+              type="monotoneX"
+              dataKey="resistanceBand"
+              stroke="#ef4444"
+              fill="#ef444433"
+              strokeWidth={1.5}
+              name="Resistance"
+              connectNulls={true}
+              isAnimationActive={false}
+            />
+            
+            <Bar 
+              dataKey="candleWick" 
+              shape={<CustomCandleStick />} 
+              fill="transparent" 
+              barSize={8}
+              isAnimationActive={false}
+            />
+            
+            <Scatter 
+              name="LONG" 
+              data={longMarkers} 
+              dataKey="yPos" 
+              fill="#22c55e"
+              shape={<ArrowShape />}
+              isAnimationActive={false}
+            />
+            <Scatter 
+              name="SHORT" 
+              data={shortMarkers} 
+              dataKey="yPos" 
+              fill="#ef4444"
+              shape={<ArrowShape />}
+              isAnimationActive={false}
+            />
+            <Scatter 
+              name="None" 
+              data={noneMarkers} 
+              dataKey="yPos" 
+              fill="#eab308"
+              shape={<CircleShape />}
+              isAnimationActive={false}
+            />
+            <ZAxis range={[100, 100]} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };
